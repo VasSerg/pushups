@@ -24,21 +24,25 @@ def num2dac(value):
 try:
     while True:
         mem = [0 for _ in range(8)]
+        sum = 0
         for i in range(bits):
             #mem[bits-1-i] = 1
             mem[i] = 1
             GPIO.output(dac, mem)
-            time.sleep(0.07)
+            time.sleep(0.05) 
+
             compv = GPIO.input(comparator)
-            if compv == 1:
+
+            if compv == 0:
                 mem[i] = 0
-            print("ADC = {}".format(mem))
-        volt = i / levels * maxVoltage
-        print("ADC = {}, input voltage = {:.2f}".format(mem,volt))
+            sum +=2**(bits-1-i)*mem[i]
+            #print("ADC = {}".format(mem))
         
+        volt =  sum/levels * maxVoltage
+        print("ADC = {}, input voltage = {:.2f}".format(mem,volt))
 except KeyboardInterrupt:
     print("The program was stoped by the keyboard")
-else:
+
 finally:
     GPIO.output(dac, GPIO.LOW)
     GPIO.cleanup(dac)
