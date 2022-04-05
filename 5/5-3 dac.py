@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 
 dac = [26, 19, 13, 6, 5, 11, 9, 10]
+leds = [21, 20, 16, 12, 7, 8, 25, 24]
 bits = len(dac)
 levels = 2**bits
 maxVoltage = 3.3
@@ -12,6 +13,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(dac, GPIO.OUT, initial = GPIO.LOW)
 GPIO.setup(comparator, GPIO.IN)
 GPIO.setup(troykaModul, GPIO.OUT, initial=GPIO.HIGH)
+GPIO.setup(leds, GPIO.IN)
 
 def decimal2binary(decimal):
     return [int(bit) for bit in bin(decimal)[2:].zfill(bits)]
@@ -21,24 +23,29 @@ def num2dac(value):
     GPIO.output(dac, signal)
     return signal
 
+
 try:
     while True:
-        mem = [0 for _ in range(8)]
-        for i in range(bits):
-            #mem[bits-1-i] = 1
-            mem[i] = 1
-            GPIO.output(dac, mem)
-            time.sleep(0.07)
+        for i in range(256):
+            
+            sig = num2dac(i)
+            time.sleep(0.0007)
+            volt = i / levels * maxVoltage
             compv = GPIO.input(comparator)
-            if compv == 1:
-                mem[i] = 0
-            print("ADC = {}".format(mem))
-        volt = i / levels * maxVoltage
-        print("ADC = {}, input voltage = {:.2f}".format(mem,volt))
+            if compv == 0:
+                print("ADC value = {:.^3} -> {}, input voltage = {:.2f}".format(i,sig,volt))
+                le = volt/maxVoltage
+                disp = [1 for _ in range(int(le))]
+                for _ in range(bits-int(le)-1):
+                    disp.append(0)
+                disp.zfill(bits) 
+                GPIO.output(leds, disp)
+                break
         
 except KeyboardInterrupt:
     print("The program was stoped by the keyboard")
 else:
+    print("No exceptions")
 finally:
     GPIO.output(dac, GPIO.LOW)
     GPIO.cleanup(dac)
